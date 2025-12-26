@@ -1,14 +1,14 @@
 package com.servicepulse.service;
 
-import com.servicepulse.domain.MonitoredService;
+import com.servicepulse.domain.HealthCheckResult;
 import com.servicepulse.domain.ServiceStatus;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-@Service
+@Component
 public class ServiceChecker {
 
     private static final long DEGRADED_THRESHOLD_MS = 2000;
@@ -19,7 +19,7 @@ public class ServiceChecker {
         this.webClient = webClient;
     }
 
-    public MonitoredService check(String name, String url) {
+    public HealthCheckResult check(String serviceName, String url) {
         long start = System.currentTimeMillis();
 
         try {
@@ -36,21 +36,19 @@ public class ServiceChecker {
                             ? ServiceStatus.DEGRADED
                             : ServiceStatus.UP;
 
-            return new MonitoredService(
-                    name,
-                    url,
+            return new HealthCheckResult(
+                    serviceName,
                     status,
-                    LocalDateTime.now(),
-                    latency
+                    latency,
+                    Instant.now()
             );
 
         } catch (Exception ex) {
-            return new MonitoredService(
-                    name,
-                    url,
+            return new HealthCheckResult(
+                    serviceName,
                     ServiceStatus.DOWN,
-                    LocalDateTime.now(),
-                    -1
+                    -1,
+                    Instant.now()
             );
         }
     }
