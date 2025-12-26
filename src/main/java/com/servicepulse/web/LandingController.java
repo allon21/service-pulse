@@ -8,11 +8,11 @@ public class LandingController {
 
     @GetMapping("/")
     public String landing() {
-        return "landing.html";
+        return "landing";
     }
 
     @GetMapping("/login")
     public String login() {
-        return "login.html";
+        return "login";
     }
 }
