@@ -1,24 +1,35 @@
 package com.servicepulse.service;
-
-import com.servicepulse.domain.MonitoredService;
+import com.servicepulse.domain.HealthCheckResult;
+import com.servicepulse.domain.ServiceView;
+import com.servicepulse.repository.HealthCheckResultRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MonitoringService {
 
-    private final ServiceChecker checker;
+    private final MonitoredServiceRegistry registry;
+    private final HealthCheckResultRepository resultRepository;
 
-    public MonitoringService(ServiceChecker checker) {
-        this.checker = checker;
+    public MonitoringService(
+            MonitoredServiceRegistry registry,
+            HealthCheckResultRepository resultRepository
+    ) {
+        this.registry = registry;
+        this.resultRepository = resultRepository;
     }
 
-    public List<MonitoredService> getServices() {
-        return List.of(
-                checker.check("Google", "https://www.google.com"),
-                checker.check("GitHub", "https://github.com"),
-                checker.check("Slow test", "https://httpstat.us/200?sleep=1500")
-        );
+    public List<ServiceView> getServicesForDashboard() {
+        return registry.getAll().stream()
+                .map(service -> {
+                    Optional<HealthCheckResult> lastResult =
+                            resultRepository.findLastByServiceName(service.getName());
+
+                    return ServiceView.from(service, lastResult.orElse(null));
+                })
+                .toList();
     }
 }
+

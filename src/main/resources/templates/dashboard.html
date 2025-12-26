@@ -27,7 +27,6 @@
             <thead class="table-light">
             <tr>
                 <th>Service</th>
-                <th>URL</th>
                 <th>Status</th>
                 <th>Latency</th>
                 <th>Last Checked</th>
@@ -39,21 +38,17 @@
                 <td th:text="${service.name}">Service</td>
 
                 <td>
-                    <a th:href="${service.url}"
-                       th:text="${service.url}"
-                       target="_blank"
-                       class="text-decoration-none"></a>
-                </td>
-
-                <td>
                     <span class="badge bg-success"
-                          th:if="${service.status.name() == 'UP'}">UP</span>
+                          th:if="${service.status != null and service.status.name() == 'UP'}">UP</span>
 
                     <span class="badge bg-warning text-dark"
-                          th:if="${service.status.name() == 'DEGRADED'}">DEGRADED</span>
+                          th:if="${service.status != null and service.status.name() == 'DEGRADED'}">DEGRADED</span>
 
                     <span class="badge bg-danger"
-                          th:if="${service.status.name() == 'DOWN'}">DOWN</span>
+                          th:if="${service.status != null and service.status.name() == 'DOWN'}">DOWN</span>
+
+                    <span class="text-muted"
+                          th:if="${service.status == null}">—</span>
                 </td>
 
                 <td>
@@ -63,8 +58,11 @@
                           class="text-muted">—</span>
                 </td>
 
-                <td th:text="${#temporals.format(service.lastCheckedAt, 'dd.MM.yyyy HH:mm:ss')}">
-                    01.01.2025 00:00:00
+                <td>
+                    <span th:if="${service.lastCheckedAt != null}"
+                          th:text="${#temporals.format(service.lastCheckedAt, 'dd.MM.yyyy HH:mm:ss')}"></span>
+                    <span th:if="${service.lastCheckedAt == null}"
+                          class="text-muted">—</span>
                 </td>
             </tr>
 
