@@ -1,7 +1,7 @@
 package com.servicepulse.scheduler;
 
 import com.servicepulse.domain.HealthCheckResult;
-import com.servicepulse.repository.HealthCheckResultRepository;
+import com.servicepulse.persistence.HealthCheckResultPersistenceAdapter;
 import com.servicepulse.service.MonitoredServiceRegistry;
 import com.servicepulse.service.ServiceChecker;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,12 +12,12 @@ public class MonitoringScheduler {
 
     private final MonitoredServiceRegistry registry;
     private final ServiceChecker checker;
-    private final HealthCheckResultRepository repository;
+    private final HealthCheckResultPersistenceAdapter repository;
 
     public MonitoringScheduler(
             MonitoredServiceRegistry registry,
             ServiceChecker checker,
-            HealthCheckResultRepository repository
+            HealthCheckResultPersistenceAdapter repository
     ) {
         this.registry = registry;
         this.checker = checker;
@@ -33,4 +33,3 @@ public class MonitoringScheduler {
         });
     }
 }
-
