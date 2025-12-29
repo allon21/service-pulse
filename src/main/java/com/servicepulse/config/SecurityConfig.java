@@ -11,18 +11,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico").permitAll()
-                        .anyRequest().authenticated()  // Остальное требует логина
+
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**")
                 )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers("/api/**").permitAll()
+
+
+                        .requestMatchers(
+                                "/", "/login", "/error",
+                                "/css/**", "/js/**", "/images/**",
+                                "/webjars/**", "/favicon.ico"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .defaultSuccessUrl("/dashboard", true)
-                        .permitAll()             // Разрешает доступ к странице логина и обработке
+                        .permitAll()
                 )
+
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/")    // После логаута на главную
+                        .logoutSuccessUrl("/")
                         .permitAll()
                 );
 

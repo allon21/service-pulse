@@ -4,32 +4,32 @@ import java.time.Instant;
 
 public class HealthCheckResult {
 
-    private final String serviceName;
+    private final Long serviceId;
     private final ServiceStatus status;
-    private final long latencyMs;
+    private final Long latencyMs;
     private final Instant checkedAt;
 
     public HealthCheckResult(
-            String serviceName,
+            Long serviceId,
             ServiceStatus status,
-            long latencyMs,
+            Long latencyMs,
             Instant checkedAt
     ) {
-        this.serviceName = serviceName;
+        this.serviceId = serviceId;
         this.status = status;
         this.latencyMs = latencyMs;
         this.checkedAt = checkedAt;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public Long getServiceId() {
+        return serviceId;
     }
 
     public ServiceStatus getStatus() {
         return status;
     }
 
-    public long getLatencyMs() {
+    public Long getLatencyMs() {
         return latencyMs;
     }
 
@@ -37,3 +37,4 @@ public class HealthCheckResult {
         return checkedAt;
     }
 }
+

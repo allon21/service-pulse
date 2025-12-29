@@ -13,65 +13,52 @@ import java.util.List;
 @Controller
 public class ServiceHistoryController {
 
+    private static final int CHART_POINTS_LIMIT = 50;
+
     private final MonitoringService monitoringService;
 
     public ServiceHistoryController(MonitoringService monitoringService) {
         this.monitoringService = monitoringService;
     }
 
-    @GetMapping("/services/{name}")
-    public String serviceHistory(@PathVariable String name, Model model) {
-        try {
-            ServiceHistoryResponse response = monitoringService.getServiceHistory(name);
-            model.addAttribute("serviceHistory", response);
-            model.addAttribute("chartData", prepareChartData(response.getHistory()));
-            return "service-history";
-        } catch (IllegalArgumentException e) {
-            return "redirect:/dashboard?error=Service+not+found";
-        }
-    }
-
-    @GetMapping("/services/{name}/last-{hours}h")
-    public String serviceHistoryByHours(
-            @PathVariable String name,
-            @PathVariable int hours,
+    @GetMapping("/services/{id}")
+    public String serviceHistory(
+            @PathVariable Long id,
             Model model
     ) {
-        try {
-            ServiceHistoryResponse response = monitoringService.getServiceHistory(name, hours);
-            model.addAttribute("serviceHistory", response);
-            model.addAttribute("chartData", prepareChartData(response.getHistory()));
-            model.addAttribute("hours", hours);
-            return "service-history";
-        } catch (IllegalArgumentException e) {
-            return "redirect:/dashboard?error=Service+not+found";
-        }
+        ServiceHistoryResponse response =
+                monitoringService.getServiceHistory(id);
+
+        model.addAttribute("serviceHistory", response);
+        model.addAttribute(
+                "chartData",
+                prepareChartData(response.getHistory())
+        );
+
+        return "service-history";
     }
 
     private String prepareChartData(List<ServiceHistoryDTO> history) {
-        if (history == null || history.isEmpty()) {
+
+        if (history.isEmpty()) {
             return "[]";
         }
 
-        StringBuilder chartData = new StringBuilder("[");
+        int fromIndex = Math.max(0, history.size() - CHART_POINTS_LIMIT);
+        List<ServiceHistoryDTO> lastPoints = history.subList(fromIndex, history.size());
 
-        // Ограничим для производительности
-        int limit = Math.min(history.size(), 50);
-        for (int i = 0; i < limit; i++) {
-            ServiceHistoryDTO item = history.get(i);
-            chartData.append(String.format(
-                    "{time: '%s', latency: %d, status: '%s'},",
+        StringBuilder json = new StringBuilder("[");
+        for (ServiceHistoryDTO item : lastPoints) {
+            json.append(String.format(
+                    "{ \"time\": \"%s\", \"latency\": %s },",
                     item.getFormattedTime(),
-                    item.getLatencyMs(),
-                    item.getStatus()
+                    item.getLatencyMs()
             ));
         }
 
-        if (chartData.length() > 1) {
-            chartData.deleteCharAt(chartData.length() - 1);
-        }
-        chartData.append("]");
+        json.deleteCharAt(json.length() - 1);
+        json.append("]");
 
-        return chartData.toString();
+        return json.toString();
     }
 }

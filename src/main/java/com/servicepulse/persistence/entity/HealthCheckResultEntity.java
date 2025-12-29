@@ -2,6 +2,7 @@ package com.servicepulse.persistence.entity;
 
 import com.servicepulse.domain.ServiceStatus;
 import jakarta.persistence.*;
+
 import java.time.Instant;
 
 @Entity
@@ -12,8 +13,9 @@ public class HealthCheckResultEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "service_name", nullable = false)
-    private String serviceName;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "service_id", nullable = false)
+    private MonitoredServiceEntity service;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -25,30 +27,55 @@ public class HealthCheckResultEntity {
     @Column(name = "checked_at", nullable = false)
     private Instant checkedAt;
 
-    // Constructors
-    public HealthCheckResultEntity() {}
+    public HealthCheckResultEntity() {
+        // for JPA
+    }
 
-    public HealthCheckResultEntity(String serviceName, ServiceStatus status,
-                                   Long latencyMs, Instant checkedAt) {
-        this.serviceName = serviceName;
+    public HealthCheckResultEntity(
+            MonitoredServiceEntity service,
+            ServiceStatus status,
+            Long latencyMs,
+            Instant checkedAt
+    ) {
+        this.service = service;
         this.status = status;
         this.latencyMs = latencyMs;
         this.checkedAt = checkedAt;
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getServiceName() { return serviceName; }
-    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
+    public MonitoredServiceEntity getService() {
+        return service;
+    }
 
-    public ServiceStatus getStatus() { return status; }
-    public void setStatus(ServiceStatus status) { this.status = status; }
+    public ServiceStatus getStatus() {
+        return status;
+    }
 
-    public Long getLatencyMs() { return latencyMs; }
-    public void setLatencyMs(Long latencyMs) { this.latencyMs = latencyMs; }
+    public Long getLatencyMs() {
+        return latencyMs;
+    }
 
-    public Instant getCheckedAt() { return checkedAt; }
-    public void setCheckedAt(Instant checkedAt) { this.checkedAt = checkedAt; }
+    public Instant getCheckedAt() {
+        return checkedAt;
+    }
+
+    public void setService(MonitoredServiceEntity service) {
+        this.service = service;
+    }
+
+    public void setStatus(ServiceStatus status) {
+        this.status = status;
+    }
+
+    public void setLatencyMs(Long latencyMs) {
+        this.latencyMs = latencyMs;
+    }
+
+    public void setCheckedAt(Instant checkedAt) {
+        this.checkedAt = checkedAt;
+    }
 }

@@ -5,99 +5,72 @@ import com.servicepulse.domain.MonitoredService;
 import com.servicepulse.domain.ServiceView;
 import com.servicepulse.persistence.HealthCheckResultPersistenceAdapter;
 import com.servicepulse.persistence.entity.HealthCheckResultEntity;
+import com.servicepulse.persistence.entity.MonitoredServiceEntity;
 import com.servicepulse.persistence.repository.HealthCheckResultJpaRepository;
+import com.servicepulse.persistence.repository.MonitoredServiceJpaRepository;
 import com.servicepulse.web.dto.ServiceHistoryDTO;
 import com.servicepulse.web.dto.ServiceHistoryResponse;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class MonitoringService {
 
-    private final MonitoredServiceRegistry registry;
     private final HealthCheckResultPersistenceAdapter resultAdapter;
     private final HealthCheckResultJpaRepository resultRepository;
+    private final MonitoredServiceJpaRepository serviceRepository;
 
     public MonitoringService(
-            MonitoredServiceRegistry registry,
             HealthCheckResultPersistenceAdapter resultAdapter,
-            HealthCheckResultJpaRepository resultRepository
+            HealthCheckResultJpaRepository resultRepository,
+            MonitoredServiceJpaRepository serviceRepository
     ) {
-        this.registry = registry;
         this.resultAdapter = resultAdapter;
         this.resultRepository = resultRepository;
+        this.serviceRepository = serviceRepository;
     }
 
     public List<ServiceView> getServicesForDashboard() {
-        return registry.getAll().stream()
-                .map(service -> {
+        return serviceRepository.findAll().stream()
+                .map(serviceEntity -> {
                     Optional<HealthCheckResult> lastResult =
-                            resultAdapter.findLastByServiceName(service.getName());
-                    return ServiceView.from(service, lastResult.orElse(null));
+                            resultAdapter.findLastByServiceId(serviceEntity.getId());
+
+                    return ServiceView.from(
+                            MonitoredService.fromEntity(serviceEntity),
+                            lastResult.orElse(null)
+                    );
                 })
                 .toList();
     }
 
-    // Получить сервис по имени
-    public Optional<MonitoredService> getServiceByName(String name) {
-        return registry.getAll().stream()
-                .filter(s -> s.getName().equalsIgnoreCase(name))
-                .findFirst();
-    }
+    public ServiceHistoryResponse getServiceHistory(Long serviceId) {
 
-    // Получить историю сервиса (за все время)
-    public ServiceHistoryResponse getServiceHistory(String serviceName) {
-        Optional<MonitoredService> serviceOpt = getServiceByName(serviceName);
+        MonitoredServiceEntity serviceEntity = serviceRepository.findById(serviceId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Service not found: " + serviceId)
+                );
 
-        if (serviceOpt.isEmpty()) {
-            throw new IllegalArgumentException("Service not found: " + serviceName);
-        }
-
-        MonitoredService service = serviceOpt.get();
-
-        // Используем существующий метод
-        List<HealthCheckResultEntity> entities = resultRepository
-                .findByServiceNameOrderByCheckedAtDesc(serviceName);
+        List<HealthCheckResultEntity> entities =
+                resultRepository.findByService_IdOrderByCheckedAtAsc(serviceId);
 
         List<ServiceHistoryDTO> history = entities.stream()
-                .map(entity -> new ServiceHistoryDTO(
-                        entity.getStatus(),
-                        entity.getLatencyMs(),
-                        entity.getCheckedAt()
+                .map(e -> new ServiceHistoryDTO(
+                        e.getStatus(),
+                        e.getLatencyMs(),
+                        e.getCheckedAt()
                 ))
-                .collect(Collectors.toList());
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 
-        return new ServiceHistoryResponse(service, history);
-    }
+        Collections.reverse(history);
 
-    // Получить историю за определенный период
-    public ServiceHistoryResponse getServiceHistory(String serviceName, int hours) {
-        Optional<MonitoredService> serviceOpt = getServiceByName(serviceName);
-
-        if (serviceOpt.isEmpty()) {
-            throw new IllegalArgumentException("Service not found: " + serviceName);
-        }
-
-        MonitoredService service = serviceOpt.get();
-        Instant fromTime = Instant.now().minus(hours, ChronoUnit.HOURS);
-
-        // Используем метод с фильтрацией по времени
-        List<HealthCheckResultEntity> entities = resultRepository
-                .findByServiceNameAndCheckedAtAfter(serviceName, fromTime);
-
-        List<ServiceHistoryDTO> history = entities.stream()
-                .map(entity -> new ServiceHistoryDTO(
-                        entity.getStatus(),
-                        entity.getLatencyMs(),
-                        entity.getCheckedAt()
-                ))
-                .collect(Collectors.toList());
-
-        return new ServiceHistoryResponse(service, history);
+        return new ServiceHistoryResponse(
+                MonitoredService.fromEntity(serviceEntity),
+                history
+        );
     }
 }

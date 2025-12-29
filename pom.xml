@@ -26,6 +26,12 @@
 
 	<dependencies>
 
+		<!-- ===== Validation (Bean Validation / Jakarta Validation) ===== -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<!-- ===== Web (MVC) ===== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

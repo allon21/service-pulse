@@ -2,6 +2,7 @@ package com.servicepulse.service;
 
 import com.servicepulse.domain.HealthCheckResult;
 import com.servicepulse.domain.ServiceStatus;
+import com.servicepulse.persistence.entity.MonitoredServiceEntity;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -20,20 +21,18 @@ public class ServiceChecker {
             .connectTimeout(Duration.ofSeconds(3))
             .build();
 
-    public HealthCheckResult check(String serviceName, String url) {
+    public HealthCheckResult check(MonitoredServiceEntity service) {
+
         long start = System.currentTimeMillis();
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(URI.create(service.getUrl()))
                     .timeout(Duration.ofSeconds(5))
                     .GET()
                     .build();
 
-            httpClient.send(
-                    request,
-                    HttpResponse.BodyHandlers.discarding()
-            );
+            httpClient.send(request, HttpResponse.BodyHandlers.discarding());
 
             long latency = System.currentTimeMillis() - start;
 
@@ -43,7 +42,7 @@ public class ServiceChecker {
                             : ServiceStatus.UP;
 
             return new HealthCheckResult(
-                    serviceName,
+                    service.getId(),
                     status,
                     latency,
                     Instant.now()
@@ -51,9 +50,9 @@ public class ServiceChecker {
 
         } catch (Exception ex) {
             return new HealthCheckResult(
-                    serviceName,
+                    service.getId(),
                     ServiceStatus.DOWN,
-                    -1,
+                    null,
                     Instant.now()
             );
         }

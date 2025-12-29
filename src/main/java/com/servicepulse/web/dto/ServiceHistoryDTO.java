@@ -15,14 +15,16 @@ public class ServiceHistoryDTO {
     private static final DateTimeFormatter TIME_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public ServiceHistoryDTO(ServiceStatus status, long latencyMs, Instant checkedAt) {
+    public ServiceHistoryDTO(ServiceStatus status, Long latencyMs, Instant checkedAt) {
         this.status = status;
-        this.latencyMs = latencyMs;
+        this.latencyMs = latencyMs != null ? latencyMs : -1;
         this.checkedAt = checkedAt;
 
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(checkedAt, ZoneId.systemDefault());
+        LocalDateTime localDateTime =
+                LocalDateTime.ofInstant(checkedAt, ZoneId.systemDefault());
         this.formattedTime = localDateTime.format(TIME_FORMATTER);
     }
+
 
     // Getters
     public ServiceStatus getStatus() { return status; }

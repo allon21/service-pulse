@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public class ServiceView {
 
+    private final Long id;
     private final String name;
     private final String url;
     private final ServiceStatus status;
@@ -11,12 +12,14 @@ public class ServiceView {
     private final Instant lastCheckedAt;
 
     private ServiceView(
+            Long id,
             String name,
             String url,
             ServiceStatus status,
             long latencyMs,
             Instant lastCheckedAt
     ) {
+        this.id = id;
         this.name = name;
         this.url = url;
         this.status = status;
@@ -30,6 +33,7 @@ public class ServiceView {
     ) {
         if (result == null) {
             return new ServiceView(
+                    service.getId(),
                     service.getName(),
                     service.getUrl(),
                     null,
@@ -39,12 +43,17 @@ public class ServiceView {
         }
 
         return new ServiceView(
+                service.getId(),
                 service.getName(),
                 service.getUrl(),
                 result.getStatus(),
                 result.getLatencyMs(),
                 result.getCheckedAt()
         );
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getName() {
