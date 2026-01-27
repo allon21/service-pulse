@@ -12,11 +12,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/services")
-public class MonitoredServiceController {
+public class MonitoredServiceApiController {
 
     private final MonitoredServiceService service;
 
-    public MonitoredServiceController(MonitoredServiceService service) {
+    public MonitoredServiceApiController(MonitoredServiceService service) {
         this.service = service;
     }
 

@@ -5,10 +5,13 @@ import com.servicepulse.domain.ServiceStatus;
 import com.servicepulse.persistence.entity.MonitoredServiceEntity;
 import org.springframework.stereotype.Component;
 
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -32,29 +35,50 @@ public class ServiceChecker {
                     .GET()
                     .build();
 
-            httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.discarding());
 
             long latency = System.currentTimeMillis() - start;
 
-            ServiceStatus status =
-                    latency > DEGRADED_THRESHOLD_MS
-                            ? ServiceStatus.DEGRADED
-                            : ServiceStatus.UP;
+            int statusCode = response.statusCode();
+            ServiceStatus status;
+
+            if (statusCode >= 200 && statusCode < 300) {
+                status = latency > DEGRADED_THRESHOLD_MS
+                        ? ServiceStatus.DEGRADED
+                        : ServiceStatus.UP;
+            } else if (statusCode >= 400 && statusCode < 500) {
+                status = ServiceStatus.DEGRADED;
+            } else {
+                status = ServiceStatus.DOWN;
+            }
 
             return new HealthCheckResult(
                     service.getId(),
                     status,
                     latency,
-                    Instant.now()
+                    Instant.now(),
+                    "HTTP " + statusCode
             );
 
+        } catch (HttpTimeoutException ex) {
+            return down(service, "Timeout");
+        } catch (UnknownHostException ex) {
+            return down(service, "Unknown host");
+        } catch (ConnectException ex) {
+            return down(service, "Connection refused");
         } catch (Exception ex) {
-            return new HealthCheckResult(
-                    service.getId(),
-                    ServiceStatus.DOWN,
-                    null,
-                    Instant.now()
-            );
+            return down(service, ex.getClass().getSimpleName());
         }
+    }
+
+    private HealthCheckResult down(MonitoredServiceEntity service, String error) {
+        return new HealthCheckResult(
+                service.getId(),
+                ServiceStatus.DOWN,
+                null,
+                Instant.now(),
+                error
+        );
     }
 }

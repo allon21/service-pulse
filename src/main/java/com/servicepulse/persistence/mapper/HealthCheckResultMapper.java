@@ -15,6 +15,7 @@ public class HealthCheckResultMapper {
         entity.setStatus(domain.getStatus());
         entity.setLatencyMs(domain.getLatencyMs());
         entity.setCheckedAt(domain.getCheckedAt());
+        entity.setErrorMessage(domain.getErrorMessage());
         return entity;
     }
 
@@ -25,7 +26,8 @@ public class HealthCheckResultMapper {
                 entity.getService().getId(),
                 entity.getStatus(),
                 entity.getLatencyMs(),
-                entity.getCheckedAt()
+                entity.getCheckedAt(),
+                entity.getErrorMessage()
         );
     }
 }

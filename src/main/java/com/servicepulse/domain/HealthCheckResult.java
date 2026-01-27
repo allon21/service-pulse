@@ -8,17 +8,20 @@ public class HealthCheckResult {
     private final ServiceStatus status;
     private final Long latencyMs;
     private final Instant checkedAt;
+    private final String errorMessage;
 
     public HealthCheckResult(
             Long serviceId,
             ServiceStatus status,
             Long latencyMs,
-            Instant checkedAt
+            Instant checkedAt,
+            String errorMessage
     ) {
         this.serviceId = serviceId;
         this.status = status;
         this.latencyMs = latencyMs;
         this.checkedAt = checkedAt;
+        this.errorMessage = errorMessage;
     }
 
     public Long getServiceId() {
@@ -36,5 +39,8 @@ public class HealthCheckResult {
     public Instant getCheckedAt() {
         return checkedAt;
     }
-}
 
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+}

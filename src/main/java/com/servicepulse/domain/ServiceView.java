@@ -1,78 +1,54 @@
 package com.servicepulse.domain;
 
-import java.time.Instant;
-
 public class ServiceView {
 
-    private final Long id;
-    private final String name;
-    private final String url;
-    private final ServiceStatus status;
-    private final long latencyMs;
-    private final Instant lastCheckedAt;
+    private final MonitoredService service;
+    private final HealthCheckResult lastResult;
 
     private ServiceView(
-            Long id,
-            String name,
-            String url,
-            ServiceStatus status,
-            long latencyMs,
-            Instant lastCheckedAt
+            MonitoredService service,
+            HealthCheckResult lastResult
     ) {
-        this.id = id;
-        this.name = name;
-        this.url = url;
-        this.status = status;
-        this.latencyMs = latencyMs;
-        this.lastCheckedAt = lastCheckedAt;
+        this.service = service;
+        this.lastResult = lastResult;
     }
 
     public static ServiceView from(
             MonitoredService service,
-            HealthCheckResult result
+            HealthCheckResult lastResult
     ) {
-        if (result == null) {
-            return new ServiceView(
-                    service.getId(),
-                    service.getName(),
-                    service.getUrl(),
-                    null,
-                    -1,
-                    null
-            );
-        }
-
-        return new ServiceView(
-                service.getId(),
-                service.getName(),
-                service.getUrl(),
-                result.getStatus(),
-                result.getLatencyMs(),
-                result.getCheckedAt()
-        );
+        return new ServiceView(service, lastResult);
     }
 
+    //данные сервиса
+
     public Long getId() {
-        return id;
+        return service.getId();
     }
 
     public String getName() {
-        return name;
+        return service.getName();
     }
 
-    public String getUrl() {
-        return url;
+    public boolean isEnabled() {
+        return service.isEnabled();
     }
 
-    public ServiceStatus getStatus() {
-        return status;
+    public MonitoredService getService() {
+        return service;
     }
 
-    public long getLatencyMs() {
-        return latencyMs;
+    //данные последней проверки
+
+    public String getLastStatus() {
+        return lastResult != null
+                ? lastResult.getStatus().name()
+                : "UNKNOWN";
     }
 
-    public Instant getLastCheckedAt() {
-        return lastCheckedAt;
+    public Long getLatencyMs() {
+        return lastResult != null
+                ? lastResult.getLatencyMs()
+                : null;
     }
 }

@@ -27,20 +27,10 @@ public class HealthCheckResultEntity {
     @Column(name = "checked_at", nullable = false)
     private Instant checkedAt;
 
-    public HealthCheckResultEntity() {
-        // for JPA
-    }
+    @Column(name = "error_message")
+    private String errorMessage;
 
-    public HealthCheckResultEntity(
-            MonitoredServiceEntity service,
-            ServiceStatus status,
-            Long latencyMs,
-            Instant checkedAt
-    ) {
-        this.service = service;
-        this.status = status;
-        this.latencyMs = latencyMs;
-        this.checkedAt = checkedAt;
+    public HealthCheckResultEntity() {
     }
 
     public Long getId() {
@@ -63,6 +53,10 @@ public class HealthCheckResultEntity {
         return checkedAt;
     }
 
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
     public void setService(MonitoredServiceEntity service) {
         this.service = service;
     }
@@ -77,5 +71,9 @@ public class HealthCheckResultEntity {
 
     public void setCheckedAt(Instant checkedAt) {
         this.checkedAt = checkedAt;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 }

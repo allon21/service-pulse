@@ -1,89 +1,85 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>ServicePulse — Dashboard</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
-          rel="stylesheet">
+    <title>ServicePulse Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
 </head>
+<body>
 
-<body class="bg-light">
+<div class="container mt-4">
 
-<nav class="navbar navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">
-            <i class="bi bi-heart-pulse"></i> ServicePulse
-        </a>
-        <div class="d-flex align-items-center">
-            <span class="text-light me-3">
-                Welcome, <span th:text="${#authentication.name}">User</span>
-            </span>
-            <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+    <h1 class="mb-4">ServicePulse Dashboard</h1>
+
+
+    <form th:action="@{/services}" method="post" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" name="name" class="form-control"
+                   placeholder="Service name" required>
         </div>
-    </div>
-</nav>
+        <div class="col-md-6">
+            <input type="url" name="url" class="form-control"
+                   placeholder="https://example.com/health" required>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Add</button>
+        </div>
+    </form>
 
-<div class="container">
+    <!-- SERVICES TABLE -->
+    <table class="table table-striped align-middle">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Latency</th>
+            <th>Enabled</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
 
-    <h2 class="mb-4">
-        <i class="bi bi-speedometer2"></i> Services Dashboard
-    </h2>
+        <tbody>
+        <tr th:each="service : ${services}">
 
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
+            <td th:text="${service.name}"></td>
 
-            <thead class="table-dark">
-            <tr>
-                <th>Service</th>
-                <th>Status</th>
-                <th>Latency</th>
-                <th>Last Checked</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
+            <td>
+                <span th:text="${service.lastStatus}"></span>
+            </td>
 
-            <tbody>
-            <tr th:each="service : ${services}"
-                th:classappend="
-                    ${service.status?.name() == 'DOWN'} ? 'table-danger' :
-                    (${service.status?.name() == 'DEGRADED'} ? 'table-warning' : '')">
+            <td>
+                <span th:if="${service.latencyMs != null}"
+                      th:text="${service.latencyMs + ' ms'}"></span>
+                <span th:if="${service.latencyMs == null}">-</span>
+            </td>
 
-                <td>
-                    <strong th:text="${service.name}">Service</strong>
-                    <div class="text-muted small" th:text="${service.url}">url</div>
-                </td>
+            <td>
+                <span th:text="${service.enabled ? 'YES' : 'NO'}"></span>
+            </td>
 
-                <td>
-                    <span th:if="${service.status != null}"
-                          class="badge"
-                          th:classappend="'bg-' + ${service.status.name().toLowerCase()}">
-                        <span th:text="${service.status}">UP</span>
-                    </span>
+            <td class="d-flex gap-2">
+                <a th:href="@{/services/{id}(id=${service.id})}"
+                   class="btn btn-outline-primary btn-sm">
+                    History
+                </a>
 
-                    <span th:if="${service.status == null}"
-                          class="badge bg-secondary">UNKNOWN</span>
-                </td>
+                <form th:action="@{/services/{id}/toggle(id=${service.id})}"
+                      method="post">
+                    <button type="submit"
+                            class="btn btn-sm"
+                            th:classappend="${service.enabled}
+                                ? 'btn-warning'
+                                : 'btn-success'">
+                        <span th:text="${service.enabled
+                            ? 'Disable'
+                            : 'Enable'}"></span>
+                    </button>
+                </form>
+            </td>
 
-                <td th:text="${service.latencyMs >= 0 ? service.latencyMs + ' ms' : '—'}">—</td>
+        </tr>
+        </tbody>
+    </table>
 
-                <td th:text="${service.lastCheckedAt != null ?
-                              #temporals.format(service.lastCheckedAt,'dd.MM.yyyy HH:mm:ss') : '—'}">
-                </td>
-
-                <td>
-                    <a th:href="@{/services/{id}(id=${service.id})}"
-                       class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-clock-history"></i> History
-                    </a>
-                </td>
-
-            </tr>
-            </tbody>
-        </table>
-    </div>
 </div>
 
 </body>

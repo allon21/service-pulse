@@ -10,6 +10,8 @@ import com.servicepulse.persistence.repository.HealthCheckResultJpaRepository;
 import com.servicepulse.persistence.repository.MonitoredServiceJpaRepository;
 import com.servicepulse.web.dto.ServiceHistoryDTO;
 import com.servicepulse.web.dto.ServiceHistoryResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -48,29 +50,36 @@ public class MonitoringService {
                 .toList();
     }
 
-    public ServiceHistoryResponse getServiceHistory(Long serviceId) {
+    public ServiceHistoryResponse getServiceHistory(
+            Long serviceId,
+            int page,
+            int size
+    ) {
+        MonitoredServiceEntity serviceEntity =
+                serviceRepository.findById(serviceId)
+                        .orElseThrow();
 
-        MonitoredServiceEntity serviceEntity = serviceRepository.findById(serviceId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Service not found: " + serviceId)
+        Page<HealthCheckResultEntity> pageResult =
+                resultRepository.findByService_Id(
+                        serviceId,
+                        PageRequest.of(page, size)
                 );
 
-        List<HealthCheckResultEntity> entities =
-                resultRepository.findByService_IdOrderByCheckedAtAsc(serviceId);
-
-        List<ServiceHistoryDTO> history = entities.stream()
-                .map(e -> new ServiceHistoryDTO(
-                        e.getStatus(),
-                        e.getLatencyMs(),
-                        e.getCheckedAt()
-                ))
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-
-        Collections.reverse(history);
+        List<ServiceHistoryDTO> history =
+                pageResult.stream()
+                        .map(e -> new ServiceHistoryDTO(
+                                e.getStatus(),
+                                e.getLatencyMs(),
+                                e.getCheckedAt(),
+                                e.getErrorMessage()
+                        ))
+                        .toList();
 
         return new ServiceHistoryResponse(
                 MonitoredService.fromEntity(serviceEntity),
-                history
+                history,
+                pageResult.getTotalElements()
         );
     }
+
 }

@@ -1,205 +1,50 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Service History - <span th:text="${serviceHistory.service.name}">Service</span></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .status-up { background-color: #d4edda; }
-        .status-degraded { background-color: #fff3cd; }
-        .status-down { background-color: #f8d7da; }
-        .latency-good { color: #198754; }
-        .latency-warning { color: #ffc107; }
-        .latency-bad { color: #dc3545; }
-        .chart-container {
-            height: 300px;
-            margin-bottom: 20px;
-        }
-    </style>
+    <title>Service History</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">ServicePulse</a>
-        <div class="navbar-nav">
-            <a class="nav-link" href="/dashboard">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
-            <a class="nav-link" th:href="@{/services/{name}(name=${serviceHistory.service.name})}">
-                <i class="bi bi-clock-history"></i> History
-            </a>
-        </div>
-    </div>
-</nav>
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1>
-                <i class="bi bi-hdd-stack"></i>
-                <span th:text="${serviceHistory.service.name}">Service Name</span>
-            </h1>
-            <p class="text-muted">
-                <i class="bi bi-link"></i>
-                <a th:href="${serviceHistory.service.url}" th:text="${serviceHistory.service.url}" target="_blank"></a>
-            </p>
-        </div>
-    </div>
+<body class="container mt-4">
 
-    <!-- Статистика -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-check-circle"></i> UP</h5>
-                    <p class="card-text display-6" th:text="${serviceHistory.upCount}">0</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> DEGRADED</h5>
-                    <p class="card-text display-6" th:text="${serviceHistory.degradedCount}">0</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-x-circle"></i> DOWN</h5>
-                    <p class="card-text display-6" th:text="${serviceHistory.downCount}">0</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-percent"></i> Availability</h5>
-                    <p class="card-text display-6" th:text="${serviceHistory.formattedAvailability}">100%</p>
-                </div>
-            </div>
-        </div>
-    </div>
+<h2 th:text="'History: ' + ${service.name}"></h2>
 
-    <!-- График -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-graph-up"></i> Response Time History (Last 24 hours)
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="latencyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<table class="table table-bordered table-striped mt-3">
+    <thead>
+    <tr>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Latency</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${history}">
+        <td th:text="${item.formattedTime}"></td>
 
-    <!-- Периоды -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="btn-group" role="group">
-                <a th:href="@{/services/{name}/last-1h(name=${serviceHistory.service.name})}"
-                   class="btn btn-outline-primary">Last 1 hour</a>
-                <a th:href="@{/services/{name}/last-6h(name=${serviceHistory.service.name})}"
-                   class="btn btn-outline-primary">Last 6 hours</a>
-                <a th:href="@{/services/{name}/last-24h(name=${serviceHistory.service.name})}"
-                   class="btn btn-outline-primary">Last 24 hours</a>
-                <a th:href="@{/services/{name}(name=${serviceHistory.service.name})}"
-                   class="btn btn-primary">All</a>
-            </div>
-        </div>
-    </div>
+        <td>
+            <span class="badge"
+                  th:classappend="' bg-' + ${item.statusColor}"
+                  th:text="${item.status}"
+                  th:title="${item.errorMessage}">
+            </span>
+        </td>
 
-    <!-- Таблица истории -->
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-table"></i> Check History
-                    <span class="badge bg-secondary" th:text="${serviceHistory.totalChecks}">0</span> checks
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Status</th>
-                                <th>Latency</th>
-                                <th>Checked At</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="check : ${serviceHistory.history}"
-                                th:classappend="'status-' + ${check.status.toString().toLowerCase()}">
-                                <td th:text="${check.formattedTime}">HH:mm:ss</td>
-                                <td>
-                                            <span class="badge"
-                                                  th:classappend="'bg-' + ${check.statusColor}"
-                                                  th:text="${check.status}">UP</span>
-                                </td>
-                                <td>
-                                            <span th:classappend="'latency-' + ${check.latencyColor}"
-                                                  th:text="${check.latencyMs} + ' ms'">100 ms</span>
-                                </td>
-                                <td th:text="${#temporals.format(check.checkedAt, 'yyyy-MM-dd HH:mm:ss')}">
-                                    2024-01-01 12:00:00
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        <td>
+            <span th:if="${item.latencyMs >= 0}"
+                  class="badge"
+                  th:classappend="' bg-' + ${item.latencyColor}"
+                  th:text="${item.latencyMs + ' ms'}">
+            </span>
+            <span th:if="${item.latencyMs < 0}"
+                  class="text-muted">
+                -
+            </span>
+        </td>
+    </tr>
+    </tbody>
+</table>
 
-<script>
-    // Данные для графика
-    const chartData = th:utext="${chartData}";
+<a href="/dashboard" class="btn btn-secondary mt-3">Back</a>
 
-    // Создание графика
-    const ctx = document.getElementById('latencyChart').getContext('2d');
-    const latencyChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: JSON.parse(chartData).map(item => item.time),
-            datasets: [{
-                label: 'Latency (ms)',
-                data: JSON.parse(chartData).map(item => item.latency),
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Latency (ms)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Time'
-                    }
-                }
-            }
-        }
-    });
-</script>
 </body>
 </html>

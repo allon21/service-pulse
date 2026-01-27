@@ -92,4 +92,5 @@ public class MonitoredServiceEntity {
     public int hashCode() {
         return Objects.hashCode(id);
     }
+
 }
